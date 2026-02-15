@@ -16,7 +16,7 @@ For your first contribution:
 - [ ] Run `make install-tools` to install golangci-lint and security scanners
 - [ ] Run `make test` to verify all tests pass on your machine
 - [ ] Read [ARCHITECTURE.md](docs/ARCHITECTURE.md) to understand internal structure
-- [ ] Pick a ["good first issue"](https://github.com/vnykmshr/ledgerq/labels/good%20first%20issue) or discuss new features in an issue first
+- [ ] Pick a ["good first issue"](https://github.com/1mb-dev/ledgerq/labels/good%20first%20issue) or discuss new features in an issue first
 - [ ] Create your feature branch from `main`
 - [ ] Make changes + add tests (aim for >80% coverage)
 - [ ] Run `make all` before committing (runs fmt, lint, test, build)

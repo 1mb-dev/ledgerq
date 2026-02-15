@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/vnykmshr/ledgerq/internal/format"
-	"github.com/vnykmshr/ledgerq/internal/logging"
+	"github.com/1mb-dev/ledgerq/internal/format"
+	"github.com/1mb-dev/ledgerq/internal/logging"
 )
 
 // Enqueue appends a message to the queue.

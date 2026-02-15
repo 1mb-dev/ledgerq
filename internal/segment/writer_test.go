@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vnykmshr/ledgerq/internal/format"
+	"github.com/1mb-dev/ledgerq/internal/format"
 )
 
 func TestNewWriter(t *testing.T) {

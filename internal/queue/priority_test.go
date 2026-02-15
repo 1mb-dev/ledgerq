@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vnykmshr/ledgerq/internal/format"
+	"github.com/1mb-dev/ledgerq/internal/format"
 )
 
 // TestQueue_Priority_BasicOrdering tests that messages are dequeued in priority order

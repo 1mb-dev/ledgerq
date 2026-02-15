@@ -3,9 +3,9 @@
 package queue
 
 import (
-	"github.com/vnykmshr/ledgerq/internal/format"
-	"github.com/vnykmshr/ledgerq/internal/logging"
-	"github.com/vnykmshr/ledgerq/internal/segment"
+	"github.com/1mb-dev/ledgerq/internal/format"
+	"github.com/1mb-dev/ledgerq/internal/logging"
+	"github.com/1mb-dev/ledgerq/internal/segment"
 )
 
 // rebuildPriorityIndex scans all existing segments and rebuilds the priority index.

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/vnykmshr/ledgerq/internal/logging"
-	"github.com/vnykmshr/ledgerq/internal/segment"
+	"github.com/1mb-dev/ledgerq/internal/logging"
+	"github.com/1mb-dev/ledgerq/internal/segment"
 )
 
 // Sync forces a sync of pending writes to disk.

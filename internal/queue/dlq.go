@@ -5,8 +5,8 @@ package queue
 import (
 	"fmt"
 
-	"github.com/vnykmshr/ledgerq/internal/format"
-	"github.com/vnykmshr/ledgerq/internal/logging"
+	"github.com/1mb-dev/ledgerq/internal/format"
+	"github.com/1mb-dev/ledgerq/internal/logging"
 )
 
 // Ack acknowledges a message processing success (v1.2.0+).

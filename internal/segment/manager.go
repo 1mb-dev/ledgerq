@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vnykmshr/ledgerq/internal/format"
+	"github.com/1mb-dev/ledgerq/internal/format"
 )
 
 // RotationPolicy defines when to rotate to a new segment.

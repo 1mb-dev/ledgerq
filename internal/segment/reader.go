@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/vnykmshr/ledgerq/internal/format"
+	"github.com/1mb-dev/ledgerq/internal/format"
 )
 
 // Reader provides sequential and indexed reads from a segment file.

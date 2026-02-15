@@ -29,11 +29,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/vnykmshr/ledgerq/internal/format"
-	"github.com/vnykmshr/ledgerq/internal/logging"
-	"github.com/vnykmshr/ledgerq/internal/metrics"
-	"github.com/vnykmshr/ledgerq/internal/queue"
-	"github.com/vnykmshr/ledgerq/internal/segment"
+	"github.com/1mb-dev/ledgerq/internal/format"
+	"github.com/1mb-dev/ledgerq/internal/logging"
+	"github.com/1mb-dev/ledgerq/internal/metrics"
+	"github.com/1mb-dev/ledgerq/internal/queue"
+	"github.com/1mb-dev/ledgerq/internal/segment"
 )
 
 // Version is the current version of LedgerQ.

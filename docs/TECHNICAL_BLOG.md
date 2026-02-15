@@ -714,12 +714,12 @@ For applications that need persistent queuing without operational overhead, Ledg
 - [Usage Guide](USAGE.md) - Complete API reference and examples
 - [Architecture](ARCHITECTURE.md) - Detailed internal design documentation
 - [Building LedgerQ](building-ledgerq.md) - Development narrative and journey
-- [API Reference](https://pkg.go.dev/github.com/vnykmshr/ledgerq/pkg/ledgerq) - GoDoc documentation
+- [API Reference](https://pkg.go.dev/github.com/1mb-dev/ledgerq/pkg/ledgerq) - GoDoc documentation
 
 ## Getting Started
 
 ```bash
-go get github.com/vnykmshr/ledgerq/pkg/ledgerq@latest
+go get github.com/1mb-dev/ledgerq/pkg/ledgerq@latest
 ```
 
 Explore the [examples/](../examples/) directory for runnable code covering all features:
@@ -731,4 +731,4 @@ Explore the [examples/](../examples/) directory for runnable code covering all f
 
 ---
 
-*LedgerQ is Apache 2.0 licensed and available at [github.com/vnykmshr/ledgerq](https://github.com/vnykmshr/ledgerq).*
+*LedgerQ is Apache 2.0 licensed and available at [github.com/1mb-dev/ledgerq](https://github.com/1mb-dev/ledgerq).*

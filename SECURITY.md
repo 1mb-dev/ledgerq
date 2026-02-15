@@ -20,7 +20,7 @@ We take security issues seriously. If you discover a security vulnerability, ple
 ### How to Report
 
 1. **Do NOT** open a public GitHub issue for security vulnerabilities
-2. Use GitHub Security Advisories: https://github.com/vnykmshr/ledgerq/security/advisories/new
+2. Use GitHub Security Advisories: https://github.com/1mb-dev/ledgerq/security/advisories/new
 3. Provide detailed information about the vulnerability:
    - Description of the vulnerability
    - Steps to reproduce

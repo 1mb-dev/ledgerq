@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vnykmshr/ledgerq/internal/metrics"
+	"github.com/1mb-dev/ledgerq/internal/metrics"
 )
 
 func TestQueue_WithMetrics(t *testing.T) {

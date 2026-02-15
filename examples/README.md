@@ -59,7 +59,7 @@ Each example demonstrates:
 ## Need Help?
 
 - **Documentation**: See [docs/USAGE.md](../docs/USAGE.md) for complete API reference
-- **Issues**: Report problems at https://github.com/vnykmshr/ledgerq/issues
+- **Issues**: Report problems at https://github.com/1mb-dev/ledgerq/issues
 - **Questions**: Check existing issues or open a discussion
 
 ## Contributing Examples

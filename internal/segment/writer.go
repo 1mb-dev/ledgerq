@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vnykmshr/ledgerq/internal/format"
+	"github.com/1mb-dev/ledgerq/internal/format"
 )
 
 // SyncPolicy defines when to fsync data to disk.

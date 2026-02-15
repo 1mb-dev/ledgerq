@@ -2,7 +2,7 @@
 
 **Last Updated:** 2025-10-21
 **Version:** 1.4.1
-**Maintainer:** @vnykmshr
+**Maintainer:** @1mb-dev
 **Review Cadence:** Quarterly or after major feature releases
 
 Internal architecture and design decisions for LedgerQ message queue.

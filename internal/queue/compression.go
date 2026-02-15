@@ -2,8 +2,8 @@
 package queue
 
 import (
-	"github.com/vnykmshr/ledgerq/internal/format"
-	"github.com/vnykmshr/ledgerq/internal/logging"
+	"github.com/1mb-dev/ledgerq/internal/format"
+	"github.com/1mb-dev/ledgerq/internal/logging"
 )
 
 // compressPayloadIfNeeded compresses a payload if compression is requested and beneficial.

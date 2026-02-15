@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vnykmshr/ledgerq/internal/logging"
-	"github.com/vnykmshr/ledgerq/internal/segment"
+	"github.com/1mb-dev/ledgerq/internal/logging"
+	"github.com/1mb-dev/ledgerq/internal/segment"
 )
 
 // TestIntegration_FullLifecycle tests a complete queue lifecycle

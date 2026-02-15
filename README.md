@@ -1,9 +1,9 @@
 # LedgerQ
 
-[![CI](https://github.com/vnykmshr/ledgerq/actions/workflows/ci.yml/badge.svg)](https://github.com/vnykmshr/ledgerq/actions/workflows/ci.yml)
+[![CI](https://github.com/1mb-dev/ledgerq/actions/workflows/ci.yml/badge.svg)](https://github.com/1mb-dev/ledgerq/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Go Reference](https://pkg.go.dev/badge/github.com/vnykmshr/ledgerq.svg)](https://pkg.go.dev/github.com/vnykmshr/ledgerq/pkg/ledgerq)
-[![Feature Complete](https://img.shields.io/badge/status-feature--complete-success.svg)](https://github.com/vnykmshr/ledgerq/releases/tag/v1.4.0)
+[![Go Reference](https://pkg.go.dev/badge/github.com/1mb-dev/ledgerq.svg)](https://pkg.go.dev/github.com/1mb-dev/ledgerq/pkg/ledgerq)
+[![Feature Complete](https://img.shields.io/badge/status-feature--complete-success.svg)](https://github.com/1mb-dev/ledgerq/releases/tag/v1.4.0)
 [![Go Version](https://img.shields.io/badge/go-%3E%3D1.23-blue.svg)](https://golang.org/dl/)
 
 A production-ready, disk-backed message queue for single-node applications - written in pure Go with zero dependencies.
@@ -77,7 +77,7 @@ A production-ready, disk-backed message queue for single-node applications - wri
 ### Installation
 
 ```bash
-go get github.com/vnykmshr/ledgerq/pkg/ledgerq@latest
+go get github.com/1mb-dev/ledgerq/pkg/ledgerq@latest
 ```
 
 ### Basic Usage
@@ -89,7 +89,7 @@ import (
     "fmt"
     "log"
 
-    "github.com/vnykmshr/ledgerq/pkg/ledgerq"
+    "github.com/1mb-dev/ledgerq/pkg/ledgerq"
 )
 
 func main() {
@@ -306,7 +306,7 @@ See [examples/](examples/) for runnable code with comprehensive READMEs:
 ## CLI Tool
 
 ```bash
-go install github.com/vnykmshr/ledgerq/cmd/ledgerq@latest
+go install github.com/1mb-dev/ledgerq/cmd/ledgerq@latest
 ```
 
 **View queue statistics:**
@@ -342,7 +342,7 @@ $ ledgerq peek /path/to/queue 5
 
 - [Usage Guide](docs/USAGE.md) - Complete reference
 - [Architecture](docs/ARCHITECTURE.md) - Internal design
-- [API Reference](https://pkg.go.dev/github.com/vnykmshr/ledgerq/pkg/ledgerq) - GoDoc
+- [API Reference](https://pkg.go.dev/github.com/1mb-dev/ledgerq/pkg/ledgerq) - GoDoc
 - [Contributing](CONTRIBUTING.md) - Development guide
 
 ## Limitations

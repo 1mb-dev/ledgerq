@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/vnykmshr/ledgerq/pkg/ledgerq"
+	"github.com/1mb-dev/ledgerq/pkg/ledgerq"
 )
 
 func main() {

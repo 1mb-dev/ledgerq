@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vnykmshr/ledgerq/internal/format"
+	"github.com/1mb-dev/ledgerq/internal/format"
 )
 
 func TestCompact_NoRetentionPolicy(t *testing.T) {

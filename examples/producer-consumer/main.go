@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vnykmshr/ledgerq/internal/queue"
+	"github.com/1mb-dev/ledgerq/internal/queue"
 )
 
 func main() {

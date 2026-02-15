@@ -2,7 +2,7 @@
 
 **Last Updated:** 2025-10-21
 **Version:** 1.4.1
-**Maintainer:** @vnykmshr
+**Maintainer:** @1mb-dev
 **Review Cadence:** After each minor version release
 
 Complete reference for using LedgerQ.
@@ -36,13 +36,13 @@ Complete reference for using LedgerQ.
 ## Installation
 
 ```bash
-go get github.com/vnykmshr/ledgerq/pkg/ledgerq@latest
+go get github.com/1mb-dev/ledgerq/pkg/ledgerq@latest
 ```
 
 Import in your code:
 
 ```go
-import "github.com/vnykmshr/ledgerq/pkg/ledgerq"
+import "github.com/1mb-dev/ledgerq/pkg/ledgerq"
 ```
 
 ## Basic Operations
@@ -714,7 +714,7 @@ fmt.Printf("Tracking %d unique messages\n", stats.DedupTrackedEntries)
 ### Installation
 
 ```bash
-go install github.com/vnykmshr/ledgerq/cmd/ledgerq@latest
+go install github.com/1mb-dev/ledgerq/cmd/ledgerq@latest
 ```
 
 ### Commands
@@ -869,4 +869,4 @@ For complete security policy and audit results, see:
 
 - [Architecture](ARCHITECTURE.md) - Internal design details
 - [Examples](../examples/) - Runnable code examples
-- [API Documentation](https://pkg.go.dev/github.com/vnykmshr/ledgerq/pkg/ledgerq) - GoDoc reference
+- [API Documentation](https://pkg.go.dev/github.com/1mb-dev/ledgerq/pkg/ledgerq) - GoDoc reference

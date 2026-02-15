@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vnykmshr/ledgerq/pkg/ledgerq"
+	"github.com/1mb-dev/ledgerq/pkg/ledgerq"
 )
 
 // TestBasicOperations tests basic queue operations using the public API

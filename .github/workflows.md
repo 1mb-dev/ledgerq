@@ -120,10 +120,10 @@ Configure these in repository settings:
 Add to README.md:
 
 ```markdown
-[![CI](https://github.com/vnykmshr/ledgerq/workflows/CI/badge.svg)](https://github.com/vnykmshr/ledgerq/actions?query=workflow%3ACI)
-[![codecov](https://codecov.io/gh/vnykmshr/ledgerq/branch/main/graph/badge.svg)](https://codecov.io/gh/vnykmshr/ledgerq)
-[![Go Report Card](https://goreportcard.com/badge/github.com/vnykmshr/ledgerq)](https://goreportcard.com/report/github.com/vnykmshr/ledgerq)
-[![GoDoc](https://pkg.go.dev/badge/github.com/vnykmshr/ledgerq)](https://pkg.go.dev/github.com/vnykmshr/ledgerq/pkg/ledgerq)
+[![CI](https://github.com/1mb-dev/ledgerq/workflows/CI/badge.svg)](https://github.com/1mb-dev/ledgerq/actions?query=workflow%3ACI)
+[![codecov](https://codecov.io/gh/1mb-dev/ledgerq/branch/main/graph/badge.svg)](https://codecov.io/gh/1mb-dev/ledgerq)
+[![Go Report Card](https://goreportcard.com/badge/github.com/1mb-dev/ledgerq)](https://goreportcard.com/report/github.com/1mb-dev/ledgerq)
+[![GoDoc](https://pkg.go.dev/badge/github.com/1mb-dev/ledgerq)](https://pkg.go.dev/github.com/1mb-dev/ledgerq/pkg/ledgerq)
 ```
 
 ## Workflow Optimization
