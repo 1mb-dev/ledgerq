@@ -1,7 +1,7 @@
 # LedgerQ
 
 [![CI](https://github.com/1mb-dev/ledgerq/actions/workflows/ci.yml/badge.svg)](https://github.com/1mb-dev/ledgerq/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Go Reference](https://pkg.go.dev/badge/github.com/1mb-dev/ledgerq.svg)](https://pkg.go.dev/github.com/1mb-dev/ledgerq/pkg/ledgerq)
 [![Feature Complete](https://img.shields.io/badge/status-feature--complete-success.svg)](https://github.com/1mb-dev/ledgerq/releases/tag/v1.4.0)
 [![Go Version](https://img.shields.io/badge/go-%3E%3D1.23-blue.svg)](https://golang.org/dl/)
@@ -388,7 +388,7 @@ go test -fuzz=FuzzEnqueueDequeue -fuzztime=30s ./internal/queue
 
 ## License
 
-Apache License 2.0 - see [LICENSE](LICENSE)
+MIT License - see [LICENSE](LICENSE)
 
 ## Credits
 
