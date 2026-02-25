@@ -104,3 +104,7 @@ jobs:
           cd ../headers && go build -v
           cd ../replay && go build -v
           cd ../metrics && go build -v
+          cd ../compression && go build -v
+          cd ../deduplication && go build -v
+          cd ../dlq && go build -v
+          cd ../priority && go build -v
