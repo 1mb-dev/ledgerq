@@ -97,3 +97,7 @@ audit: ## Run security audit checks
 	@echo ""
 	@echo "$(GREEN)✓ Security audit completed$(RESET)"
 	@echo "$(YELLOW)See docs/SECURITY_AUDIT.md for detailed security analysis$(RESET)"
+
+.PHONY: setup
+setup: ## Bootstrap repo: install git hooks
+	@scripts/setup.sh
