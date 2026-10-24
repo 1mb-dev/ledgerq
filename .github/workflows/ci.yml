@@ -2,109 +2,35 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+  # A Dependabot auto-merge is pushed by GITHUB_TOKEN, which starts no push run, so main is
+  # unverified until the next daily run. Dispatch verifies it on demand.
+  schedule:
+    - cron: "23 4 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  test:
-    name: Test (${{ matrix.os }}, Go ${{ matrix.go }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-        go: ['1.25', '1.26']
+  ci:
+    uses: 1mb-dev/.github/.github/workflows/ci-go.yml@main
+    with:
+      build-binary: "./cmd/ledgerq"
+
+  # The release ships ledgerq-windows-amd64.exe and validation_windows.go is Windows-only;
+  # the shared workflow runs on Linux alone.
+  windows:
+    name: Test (Windows)
+    runs-on: windows-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Set up Go
-        uses: actions/setup-go@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
-          go-version: ${{ matrix.go }}
-
-      - name: Run tests
-        run: go test -v -timeout 5m ./...
-
-      - name: Run tests with race detector
-        run: go test -race -v -timeout 10m ./...
-
-  coverage:
-    name: Coverage
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: '1.26'
-
-      - name: Run tests with coverage
-        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v6
-        with:
-          files: ./coverage.out
-          flags: unittests
-          fail_ci_if_error: false
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: '1.26'
-
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v9
-        with:
-          version: v2.9.0
-
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: '1.26'
-
-      - name: Build library
-        run: go build -v ./...
-
-      - name: Build CLI
-        run: go build -v -o ledgerq ./cmd/ledgerq
-
-      - name: Test CLI version command
-        run: ./ledgerq version
-
-      - name: Build examples
-        run: |
-          cd examples/simple && go build -v
-          cd ../producer-consumer && go build -v
-          cd ../streaming && go build -v
-          cd ../ttl && go build -v
-          cd ../headers && go build -v
-          cd ../replay && go build -v
-          cd ../metrics && go build -v
-          cd ../compression && go build -v
-          cd ../deduplication && go build -v
-          cd ../dlq && go build -v
-          cd ../priority && go build -v
+          go-version: "1.27"
+          check-latest: true
+      - run: go test ./...
+      - run: go build -o ledgerq.exe ./cmd/ledgerq
+      - run: ./ledgerq.exe version
