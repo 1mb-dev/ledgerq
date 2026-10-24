@@ -1,3 +1,3 @@
 module github.com/1mb-dev/ledgerq
 
-go 1.23
+go 1.26.0
