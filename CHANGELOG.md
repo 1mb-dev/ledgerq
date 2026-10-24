@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Add changes here as they are implemented -->
 
+### Changed
+
+- Requires Go 1.26 or later (was 1.23; 1.23 to 1.25 are end of life). Release binaries build on the current Go 1.27 patch.
+
 ---
 
 ## [1.4.1] - 2025-10-21
