@@ -89,6 +89,28 @@ func entryOffsets(t *testing.T, path string) []uint64 {
 	return offsets
 }
 
+// asCrashed makes a closed segment look like one a crash left: no stamp in the header, no index.
+func asCrashed(t *testing.T, path string) {
+	t.Helper()
+	header, err := format.ReadSegmentHeader(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	header.MinMsgID, header.MaxMsgID = 0, 0
+	file, err := os.OpenFile(path, os.O_WRONLY, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = file.Close() }()
+	if _, err := file.WriteAt(header.Marshal(), 0); err != nil {
+		t.Fatal(err)
+	}
+	index := strings.TrimSuffix(path, segment.SegmentFileExtension) + segment.IndexFileExtension
+	if err := os.Remove(index); err != nil && !os.IsNotExist(err) {
+		t.Fatal(err)
+	}
+}
+
 func truncateTo(t *testing.T, path string, size int64) {
 	t.Helper()
 	if err := os.Truncate(path, size); err != nil {
@@ -139,6 +161,7 @@ func TestRecovery_TornTail(t *testing.T) {
 			fillQueue(t, dir)
 			path := segmentWithEntries(t, dir)
 			offsets := entryOffsets(t, path)
+			asCrashed(t, path)
 
 			truncateTo(t, path, int64(offsets[crashEntries-1])+keep)
 
@@ -183,7 +206,9 @@ func TestRecovery_TornSegmentBehindEmptySegments(t *testing.T) {
 	path := segmentWithEntries(t, dir)
 
 	// The state a failed Open used to leave: the torn segment is no longer the last one.
-	truncateTo(t, path, int64(entryOffsets(t, path)[4])+7)
+	offsets := entryOffsets(t, path)
+	asCrashed(t, path)
+	truncateTo(t, path, int64(offsets[4])+7)
 
 	assertUsable(t, dir, crashEntries-1)
 }
@@ -191,23 +216,137 @@ func TestRecovery_TornSegmentBehindEmptySegments(t *testing.T) {
 func TestRecovery_EveryEntryLost(t *testing.T) {
 	dir := t.TempDir()
 	fillQueue(t, dir)
-	truncateTo(t, segmentWithEntries(t, dir), format.SegmentHeaderSize+3)
+	path := segmentWithEntries(t, dir)
+	asCrashed(t, path)
+	truncateTo(t, path, format.SegmentHeaderSize+3)
 
 	assertUsable(t, dir, 0)
 }
 
-func TestRecovery_RemovesStaleIndex(t *testing.T) {
+func TestRecovery_KeepsTheBytesItCuts(t *testing.T) {
 	dir := t.TempDir()
 	fillQueue(t, dir)
 	path := segmentWithEntries(t, dir)
 	offsets := entryOffsets(t, path)
+	asCrashed(t, path)
+	cutAt := int64(offsets[3]) + 40
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	truncateTo(t, path, cutAt)
+
+	assertUsable(t, dir, 3)
+
+	saved, err := os.ReadFile(path + ".torn")
+	if err != nil {
+		t.Fatalf("side file: %v", err)
+	}
+	cutFrom := int(offsets[3])
+	if want := data[cutFrom:cutAt]; !bytes.Equal(saved, want) {
+		t.Fatalf("side file holds %d bytes, want the %d cut", len(saved), len(want))
+	}
+}
+
+func TestRecovery_CutsATearLargerThanTheWriteBuffer(t *testing.T) {
+	dir := t.TempDir()
+	q, err := Open(dir, crashOptions(dir))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := q.Enqueue(bytes.Repeat([]byte{'a'}, 100)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := q.Enqueue(make([]byte, 1<<20)); err != nil {
+		t.Fatal(err)
+	}
+	if err := q.Close(); err != nil {
+		t.Fatal(err)
+	}
+	path := segmentWithEntries(t, dir)
+	offsets := entryOffsets(t, path)
+	asCrashed(t, path)
+	truncateTo(t, path, int64(offsets[1])+200*1024)
+
+	assertUsable(t, dir, 1)
+}
+
+func TestRecovery_RepairedSegmentCountsAsClosed(t *testing.T) {
+	dir := t.TempDir()
+	fillQueue(t, dir)
+	path := segmentWithEntries(t, dir)
+	offsets := entryOffsets(t, path)
+	asCrashed(t, path)
+	truncateTo(t, path, int64(offsets[4])+7)
+	reopenEmpty(t, dir)
+
+	// Damage after the repair: without the stamp this would read as a tear and cut three entries.
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	data[offsets[1]+3] ^= 0x40
+	if err := os.WriteFile(path, data, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := Open(dir, crashOptions(dir)); err == nil {
+		t.Fatal("Open() over damage to a repaired segment succeeded")
+	}
+	if info, err := os.Stat(path); err != nil || info.Size() != int64(len(data)) {
+		t.Fatalf("repaired segment changed: size %v, error %v", info.Size(), err)
+	}
+}
+
+func TestRecovery_ClosedSegmentIsNeverCut(t *testing.T) {
+	dir := t.TempDir()
+	fillQueue(t, dir)
+	path := segmentWithEntries(t, dir)
+	offsets := entryOffsets(t, path)
+	cutAt := int64(offsets[4]) + 7
+	truncateTo(t, path, cutAt)
+
+	_, err := Open(dir, crashOptions(dir))
+	if err == nil {
+		t.Fatal("Open() over a closed segment ending mid-entry succeeded")
+	}
+	if !strings.Contains(err.Error(), "is damaged at offset") {
+		t.Fatalf("Open() error = %v", err)
+	}
+	if info, err := os.Stat(path); err != nil || info.Size() != cutAt {
+		t.Fatalf("closed segment changed: size %v, error %v", info.Size(), err)
+	}
+	if _, err := os.Stat(path + ".torn"); !os.IsNotExist(err) {
+		t.Fatalf("closed segment produced a side file, Stat() error = %v", err)
+	}
+}
+
+func TestRecovery_StatsReportTheCut(t *testing.T) {
+	dir := t.TempDir()
+	fillQueue(t, dir)
+	path := segmentWithEntries(t, dir)
+	offsets := entryOffsets(t, path)
+	asCrashed(t, path)
 	truncateTo(t, path, int64(offsets[4])+7)
 
-	assertUsable(t, dir, crashEntries-1)
+	q, err := Open(dir, crashOptions(dir))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := q.Stats().RepairedBytes; got != 7 {
+		t.Fatalf("Stats().RepairedBytes = %d, want 7", got)
+	}
+	if err := q.Close(); err != nil {
+		t.Fatal(err)
+	}
 
-	index := path[:len(path)-len(segment.SegmentFileExtension)] + segment.IndexFileExtension
-	if _, err := os.Stat(index); !os.IsNotExist(err) {
-		t.Fatalf("index for a truncated segment still exists, Stat() error = %v", err)
+	q, err = Open(dir, crashOptions(dir))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = q.Close() }()
+	if got := q.Stats().RepairedBytes; got != 0 {
+		t.Fatalf("Stats().RepairedBytes after a clean reopen = %d, want 0", got)
 	}
 }
 
@@ -298,7 +437,9 @@ func TestRecovery_WarnsWhatWasLost(t *testing.T) {
 	dir := t.TempDir()
 	fillQueue(t, dir)
 	path := segmentWithEntries(t, dir)
-	truncateTo(t, path, int64(entryOffsets(t, path)[4])+7)
+	offsets := entryOffsets(t, path)
+	asCrashed(t, path)
+	truncateTo(t, path, int64(offsets[4])+7)
 
 	logger := &warnLogger{}
 	opts := crashOptions(dir)

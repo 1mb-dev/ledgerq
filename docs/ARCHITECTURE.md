@@ -453,7 +453,7 @@ Measured through the public API with 200-byte payloads (Go 1.27, macOS, Intel i5
 **On Open**:
 1. Take the directory lock; a second process is refused
 2. Validate segment sequence
-3. Repair the newest segment holding entries: cut an incomplete final entry, remove segments shorter than a header
+3. Repair the newest segment holding entries: if it was never closed, keep any incomplete final entry in a `.torn` file, cut it, and stamp the segment closed; remove segments shorter than a header
 4. Read metadata, then set the next message ID from the segments, which are the truth
 5. Resume from the persisted read position
 
@@ -462,7 +462,9 @@ After a crash, the IDs of messages that never reached disk are reissued. This is
 **Corruption Handling**:
 - CRC32 checksums detect corrupted entries
 - A complete entry that fails its checksum fails Open; nothing is skipped
-- A corrupt length cannot be told from a torn entry, so the segment is cut there and Open logs a warning with the bytes dropped
+- Closed segments are never cut. Close syncs the entries before it stamps `MaxMsgID`, so a stamped segment that ends mid-entry is damage, and Open fails
+- An unclosed segment cannot tell damage from a crash: a corrupt length there reads as a tear and is cut. The cut bytes stay in `<segment>.torn`, which nothing deletes, and `Stats.RepairedBytes` reports the count
+- Zeroed blocks after a power loss fail the checksum, so Open fails
 
 ### Data Loss Scenarios
 

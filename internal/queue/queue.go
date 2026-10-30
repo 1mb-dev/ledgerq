@@ -145,7 +145,9 @@ func Open(dir string, opts *Options) (*Queue, error) {
 	}
 
 	if dropped := segments.RepairedBytes(); dropped > 0 {
-		opts.Logger.Warn("cut a torn entry from a segment", logging.F("bytes", dropped))
+		opts.Logger.Warn("cut a torn entry from a segment; the bytes are in a .torn file beside it",
+			logging.F("bytes", dropped),
+		)
 	}
 
 	// The segments are the truth. Metadata can trail them when it wasn't synced before a crash,
