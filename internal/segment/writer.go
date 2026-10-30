@@ -191,6 +191,9 @@ func (w *Writer) Write(entry *format.Entry) (uint64, error) {
 	// Track offset before write
 	offset := w.nextOffset
 
+	// Set before the write: a short write must fail Close, not let it stamp this segment
+	w.needsSync = true
+
 	// Write to buffer
 	n, err := w.writer.Write(data)
 	if err != nil {
@@ -225,8 +228,6 @@ func (w *Writer) Write(entry *format.Entry) (uint64, error) {
 		})
 		w.lastIndexOffset = offset
 	}
-
-	w.needsSync = true
 
 	// Sync if policy requires
 	if w.opts.SyncPolicy == SyncImmediate {

@@ -38,7 +38,7 @@ import (
 
 // Version is the current version of LedgerQ.
 // This is the single source of truth for the application version.
-const Version = "1.4.1"
+const Version = "1.4.3"
 
 // Priority represents the priority level of a message.
 type Priority uint8
@@ -317,6 +317,10 @@ type Stats struct {
 
 	// DedupTrackedEntries is the number of active dedup entries (v1.4.0+)
 	DedupTrackedEntries int
+
+	// RepairedBytes is how many bytes Open cut from a torn segment. They are kept in a .torn file
+	// beside it. Nonzero means the last run crashed, or the segment was damaged.
+	RepairedBytes int64
 }
 
 // CompactionResult contains the result of a compaction operation.
@@ -636,6 +640,7 @@ func (q *Queue) Stats() *Stats {
 		DLQPendingMessages:   stats.DLQPendingMessages,
 		RetryTrackedMessages: stats.RetryTrackedMessages,
 		DedupTrackedEntries:  stats.DedupTrackedEntries,
+		RepairedBytes:        stats.RepairedBytes,
 	}
 }
 

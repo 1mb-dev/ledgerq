@@ -48,6 +48,9 @@ type Queue struct {
 	// Segment manager for storage
 	segments *segment.Manager
 
+	// Held from Open to Close: one process per queue directory
+	dirLock *os.File
+
 	// Metadata for persistent state
 	metadata *Metadata
 
@@ -105,6 +108,18 @@ func Open(dir string, opts *Options) (*Queue, error) {
 		return nil, fmt.Errorf("disk space check failed: %w", err)
 	}
 
+	// Take the lock before anything reads or repairs the directory
+	dirLock, err := acquireDirLock(dir)
+	if err != nil {
+		return nil, err
+	}
+	opened := false
+	defer func() {
+		if !opened {
+			_ = dirLock.Close()
+		}
+	}()
+
 	// Open or create metadata file
 	metadata, err := OpenMetadata(dir, opts.AutoSync)
 	if err != nil {
@@ -121,21 +136,44 @@ func Open(dir string, opts *Options) (*Queue, error) {
 		return nil, fmt.Errorf("failed to create segment manager: %w", err)
 	}
 
-	// Recover state from segments if needed (for nextMsgID)
-	recoveredNextMsgID, _, err := recoverState(segments)
+	// Recover state from segments
+	recoveredNextMsgID, hasEntries, err := recoverState(segments)
 	if err != nil {
 		_ = segments.Close()
 		_ = metadata.Close()
 		return nil, fmt.Errorf("failed to recover queue state: %w", err)
 	}
 
-	// Use the higher of metadata nextMsgID and recovered nextMsgID
-	// This handles the case where segments were written but metadata wasn't synced
-	// before a crash. We always want to use the highest ID to prevent collisions.
-	if recoveredNextMsgID > nextMsgID {
-		nextMsgID = recoveredNextMsgID
-		// Update metadata with recovered state to ensure consistency
-		if err := metadata.SetNextMsgID(nextMsgID); err != nil {
+	if dropped := segments.RepairedBytes(); dropped > 0 {
+		opts.Logger.Warn("cut a torn entry from a segment; the bytes are in a .torn file beside it",
+			logging.F("bytes", dropped),
+		)
+	}
+
+	// The segments are the truth. Metadata can trail them when it wasn't synced before a crash,
+	// and it can lead them: it is written per message, while entries wait in the write buffer.
+	// Leading metadata would leave readers waiting forever for messages that never reached disk.
+	//
+	// Lowering next reissues the IDs of lost messages. That is safe because Dequeue syncs before
+	// it reads: a lost message was never delivered, so a reissued ID is above every delivered ID.
+	wantNext, wantRead := nextMsgID, readMsgID
+	if hasEntries {
+		wantNext = recoveredNextMsgID
+	} else {
+		wantRead = wantNext // Nothing on disk to read
+	}
+	if wantRead > wantNext {
+		wantRead = wantNext
+	}
+	if wantNext < nextMsgID {
+		opts.Logger.Warn("messages recorded in metadata never reached disk",
+			logging.F("reissuing_from", wantNext),
+			logging.F("metadata_next", nextMsgID),
+		)
+	}
+	if wantNext != nextMsgID || wantRead != readMsgID {
+		nextMsgID, readMsgID = wantNext, wantRead
+		if err := metadata.UpdateState(nextMsgID, readMsgID); err != nil {
 			_ = segments.Close()
 			_ = metadata.Close()
 			return nil, fmt.Errorf("failed to update metadata: %w", err)
@@ -144,6 +182,7 @@ func Open(dir string, opts *Options) (*Queue, error) {
 
 	q := &Queue{
 		opts:      opts,
+		dirLock:   dirLock,
 		segments:  segments,
 		metadata:  metadata,
 		nextMsgID: nextMsgID,
@@ -242,6 +281,7 @@ func Open(dir string, opts *Options) (*Queue, error) {
 	)
 
 	// Log queue opened
+	opened = true
 	opts.Logger.Info("queue opened",
 		logging.F("dir", dir),
 		logging.F("next_msg_id", nextMsgID),
@@ -252,45 +292,35 @@ func Open(dir string, opts *Options) (*Queue, error) {
 	return q, nil
 }
 
-// recoverState scans existing segments to determine the next message ID and read position.
-func recoverState(segments *segment.Manager) (nextMsgID, readMsgID uint64, err error) {
+// recoverState finds the next message ID from the newest segment holding entries.
+// hasEntries is false when no segment holds any, which also covers a queue with no segments.
+func recoverState(segments *segment.Manager) (nextMsgID uint64, hasEntries bool, err error) {
 	allSegments := segments.GetSegments()
 
-	if len(allSegments) == 0 {
-		// No segments yet, start from 1
-		return 1, 1, nil
-	}
-
-	// Find the highest message ID by scanning the last segment
-	lastSeg := allSegments[len(allSegments)-1]
-	reader, err := segment.NewReader(lastSeg.Path)
-	if err != nil {
-		return 0, 0, fmt.Errorf("failed to open last segment: %w", err)
-	}
-	defer func() { _ = reader.Close() }()
-
-	var maxMsgID uint64 = 0
-
-	// Scan all entries in the last segment to find max message ID
-	err = reader.ScanAll(func(entry *format.Entry, offset uint64) error {
-		if entry.MsgID > maxMsgID {
-			maxMsgID = entry.MsgID
+	for i := len(allSegments) - 1; i >= 0; i-- {
+		reader, err := segment.NewReader(allSegments[i].Path)
+		if err != nil {
+			return 0, false, fmt.Errorf("failed to open segment: %w", err)
 		}
-		return nil
-	})
 
-	if err != nil {
-		return 0, 0, fmt.Errorf("failed to scan segment: %w", err)
+		var maxMsgID uint64
+		err = reader.ScanAll(func(entry *format.Entry, offset uint64) error {
+			if entry.MsgID > maxMsgID {
+				maxMsgID = entry.MsgID
+			}
+			return nil
+		})
+		_ = reader.Close()
+		if err != nil {
+			return 0, false, fmt.Errorf("failed to scan segment: %w", err)
+		}
+
+		if maxMsgID > 0 {
+			return maxMsgID + 1, true, nil
+		}
 	}
 
-	// Next message ID is one after the max
-	nextMsgID = maxMsgID + 1
-
-	// For now, start reading from the beginning
-	// In a future phase, we'll track read position in metadata
-	readMsgID = 1
-
-	return nextMsgID, readMsgID, nil
+	return 1, false, nil
 }
 
 // SeekToMessageID sets the read position to a specific message ID.
@@ -305,6 +335,7 @@ func (q *Queue) Close() error {
 	if q.closed {
 		return nil
 	}
+	defer func() { _ = q.dirLock.Close() }()
 
 	// Stop sync timer
 	if q.syncTimerActive {

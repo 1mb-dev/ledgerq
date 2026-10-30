@@ -137,6 +137,10 @@ type Stats struct {
 
 	// DedupTrackedEntries is the number of active dedup entries (v1.4.0+)
 	DedupTrackedEntries int
+
+	// RepairedBytes is how many bytes Open cut from a torn segment. They are kept in a .torn file
+	// beside it. Nonzero means the last run crashed, or the segment was damaged.
+	RepairedBytes int64
 }
 
 // Stats returns current queue statistics.
@@ -155,6 +159,7 @@ func (q *Queue) Stats() *Stats {
 		NextMessageID:   q.nextMsgID,
 		ReadMessageID:   q.readMsgID,
 		SegmentCount:    len(segments),
+		RepairedBytes:   q.segments.RepairedBytes(),
 	}
 
 	// Populate DLQ statistics if DLQ is enabled (v1.2.0+)

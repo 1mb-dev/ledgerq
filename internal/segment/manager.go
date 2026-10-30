@@ -95,6 +95,7 @@ type Manager struct {
 	mu             sync.RWMutex
 	activeWriter   *Writer
 	segments       []*SegmentInfo
+	repairedBytes  int64
 	nextBaseOffset uint64
 	segmentCreated time.Time
 	closed         bool
@@ -118,6 +119,12 @@ func NewManager(opts *ManagerOptions) (*Manager, error) {
 		return nil, fmt.Errorf("invalid segment sequence: %w", err)
 	}
 
+	// Recover from a crash before anything reads the segments
+	segments, repaired, err := repairTail(segments)
+	if err != nil {
+		return nil, fmt.Errorf("failed to repair segments: %w", err)
+	}
+
 	// Determine next base offset
 	var nextOffset uint64
 	if len(segments) > 0 {
@@ -133,6 +140,7 @@ func NewManager(opts *ManagerOptions) (*Manager, error) {
 	m := &Manager{
 		opts:           opts,
 		segments:       segments,
+		repairedBytes:  repaired,
 		nextBaseOffset: nextOffset,
 		segmentCreated: time.Now(),
 	}
@@ -243,6 +251,11 @@ func (m *Manager) Sync() error {
 	}
 
 	return writer.Sync()
+}
+
+// RepairedBytes returns how many bytes opening this manager cut from a torn segment.
+func (m *Manager) RepairedBytes() int64 {
+	return m.repairedBytes
 }
 
 // GetSegments returns information about all segments.

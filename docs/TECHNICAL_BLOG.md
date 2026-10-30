@@ -202,9 +202,9 @@ sequenceDiagram
 ```
 
 **Performance Characteristics:**
-- **Buffered writes**: ~3M ops/sec (300-400ns latency)
-- **Synchronized writes**: ~50 ops/sec (19ms latency)
-- **Batch operations**: ~50M msgs/sec with batching (200ns/msg)
+- **Buffered writes**: ~230K ops/sec (~4μs latency)
+- **Synchronized writes**: ~27 ops/sec (~37ms latency)
+- **Batch operations**: ~2M msgs/sec with batching (~500ns/msg)
 
 ### Dequeue Flow
 
@@ -241,8 +241,7 @@ sequenceDiagram
 ```
 
 **Performance Characteristics:**
-- **Single dequeue**: ~1.4K ops/sec (700μs latency)
-- **Batch dequeue**: ~14K msgs/sec (700ns/msg)
+- **Single dequeue**: ~80 ops/sec (~12ms latency), with 5,000 queued
 
 ## Advanced Features
 
@@ -412,8 +411,7 @@ sequenceDiagram
     Segment->>Segment: Validate sequence
     Segment->>Segment: Verify checksums
     alt Corruption Detected
-        Segment->>Segment: Skip corrupted entry
-        Segment->>Queue: Log warning
+        Segment->>Queue: Fail Open
     end
     Segment-->>Queue: Rebuilt state
     Queue->>Queue: Rebuild priority index
@@ -431,22 +429,21 @@ sequenceDiagram
 
 **Corruption Handling:**
 - CRC32 checksum verification on every read
-- Skip corrupted entries during recovery
-- Log warnings for manual investigation
-- Automatic truncation of incomplete writes
+- A complete entry that fails its checksum fails Open; nothing is skipped
+- Automatic truncation of incomplete writes, with a logged warning
 
 ### Durability Guarantees
 
 **AutoSync = false (default):**
-- Writes buffered in OS page cache
+- Writes buffered inside the process
 - Periodic fsync based on SyncInterval
-- **Risk**: Data loss on OS crash before sync
-- **Benefit**: 50x better throughput
+- **Risk**: A process or OS crash loses acknowledged messages since the last sync
+- **Benefit**: Thousands of times the throughput
 
 **AutoSync = true:**
 - Immediate fsync after every write
 - Guaranteed disk persistence
-- **Risk**: None (data always on disk)
+- **Risk**: Storage that does not honour fsync
 - **Benefit**: Maximum durability
 
 **Batch operations:**
@@ -464,13 +461,12 @@ sequenceDiagram
 
 | Operation | Throughput | Latency | Configuration |
 |-----------|------------|---------|---------------|
-| Enqueue (buffered) | 3M ops/sec | 300-400ns | AutoSync=false |
-| Enqueue (sync) | 50 ops/sec | 19ms | AutoSync=true |
-| EnqueueBatch (100) | 50M msgs/sec | 200ns/msg | Buffered |
-| Dequeue | 1.4K ops/sec | 700μs | Single |
-| DequeueBatch (10) | 14K msgs/sec | 700ns/msg | Batch |
+| Enqueue (buffered) | ~230K ops/sec | ~4μs | AutoSync=false |
+| Enqueue (sync) | ~27 ops/sec | ~37ms | AutoSync=true |
+| EnqueueBatch (100) | ~2M msgs/sec | ~500ns/msg | Buffered |
+| Dequeue | ~80 ops/sec | ~12ms | Single, 5,000 queued |
 
-*Benchmarks: Go 1.21, macOS, Intel i5-8257U @ 2.3GHz*
+*Measured through the public API with 200-byte payloads (Go 1.27, macOS, Intel i5-8257U). Dequeue with 5,000 queued. Dequeue syncs before it reads.*
 
 ### Scalability Considerations
 

@@ -6,13 +6,13 @@
 [![Feature Complete](https://img.shields.io/badge/status-feature--complete-success.svg)](https://github.com/1mb-dev/ledgerq/releases/tag/v1.4.0)
 [![Go Version](https://img.shields.io/badge/go-%3E%3D1.23-blue.svg)](https://golang.org/dl/)
 
-A production-ready, disk-backed message queue for single-node applications - written in pure Go with zero dependencies.
+A disk-backed message queue for single-node applications - written in pure Go with zero dependencies.
 
 **Feature-complete as of v1.4.0** - LedgerQ focuses on being excellent at local message queuing rather than trying to replace distributed systems like Kafka.
 
 ## Features
 
-- Crash-safe durability with append-only log design
+- Append-only log that reopens at its last complete entry after a crash
 - Zero dependencies beyond the Go standard library
 - High throughput with batch operations
 - **Priority queue support (v1.1.0+)** with starvation prevention
@@ -28,7 +28,7 @@ A production-ready, disk-backed message queue for single-node applications - wri
 
 ## Why LedgerQ?
 
-**Single-node message queue with disk durability.** No network, no clustering, no external dependencies. If you're building CLI tools, desktop apps, or edge devices that need crash-safe task queues, LedgerQ stores messages on disk using an append-only log.
+**Single-node message queue on disk.** No network, no clustering, no external dependencies. If you're building CLI tools, desktop apps, or edge devices that need task queues on disk, LedgerQ stores messages on disk using an append-only log.
 
 ### When to Use LedgerQ
 
@@ -64,11 +64,12 @@ A production-ready, disk-backed message queue for single-node applications - wri
 ### Trade-offs
 
 - ✅ Zero config, just a directory path
-- ✅ Survives crashes and reboots
+- ✅ Reopens after a crash at the last complete entry
 - ✅ Fast sequential I/O (append-only)
 - ✅ No network protocols or ports
 - ✅ Embeddable in any Go application
 - ❌ Single process only (file locking)
+- ❌ Buffered by default: a crash can lose acknowledged messages. `AutoSync` prevents that, at about 27 writes a second
 - ❌ Not distributed (single node)
 - ❌ Single consumer (FIFO order)
 
@@ -271,14 +272,15 @@ q.SeekToTimestamp(time.Now().Add(-1 * time.Hour).UnixNano())
 
 ## Performance
 
-Benchmarks (Go 1.21, macOS, Intel i5-8257U @ 2.3GHz):
+Measured through the public API with 200-byte payloads (Go 1.27, macOS, Intel i5-8257U). Dequeue with 5,000 queued. Dequeue syncs before it reads.
 
 | Operation | Throughput | Latency |
 |-----------|------------|---------|
-| Enqueue (buffered) | 3M ops/sec | 300-400 ns |
-| Enqueue (fsync) | 50 ops/sec | 19 ms |
-| EnqueueBatch (100 msgs) | 50M msgs/sec | 200 ns/msg |
-| Dequeue | 1.4K ops/sec | 700 μs |
+| Enqueue (buffered) | ~230K ops/sec | ~4 μs |
+| Enqueue (AutoSync) | ~27 ops/sec | ~37 ms |
+| EnqueueBatch (100 msgs, buffered) | ~2M msgs/sec | ~500 ns/msg |
+| EnqueueBatch (100 msgs, AutoSync) | ~2.6K msgs/sec | ~385 μs/msg |
+| Dequeue | ~80 ops/sec | ~12 ms |
 
 Use batch operations for high throughput.
 

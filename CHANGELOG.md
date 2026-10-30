@@ -9,9 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- Add changes here as they are implemented -->
 
+---
+
+## [1.4.3] - 2026-10-30
+
 ### Changed
 
 - Requires Go 1.26 or later (was 1.23; 1.23 to 1.25 are end of life). Release binaries build on the current Go 1.27 patch.
+- A queue directory is locked to one process. A second Open, including `ledgerq stats` on a running queue, is refused
+- After a crash, the IDs of messages that never reached disk are reissued. `Message.ID` is unique among delivered messages only
+
+### Fixed
+
+- Open recovers from a crash: it cuts an incomplete final entry from a segment that was never closed, removes a segment whose header never reached disk, and stamps the repaired segment closed
+- The cut bytes are kept in a `.torn` file beside the segment, Open logs a warning, and `Stats.RepairedBytes` reports the count
+- A short write no longer lets Close stamp a segment as complete
+- Dequeue no longer sticks on `message ID N not found` after a crash
+- README and docs: durability claims corrected. Without `AutoSync`, a crash can lose acknowledged messages
+- Published benchmarks replaced with measured figures. The old ones overstated buffered writes, batches and Dequeue by more than ten times
+
+### Known limits
+
+- A queue that kept enqueuing after the old second Open still stops at the gap; `SeekToMessageID` to the first surviving ID moves past it
+- A closed segment that ends mid-entry fails Open and is never cut. A segment that was never closed cannot tell damage from a crash, so a corrupt length there is cut, and the bytes stay in `.torn`, which nothing deletes
+- Zeroed blocks after a power loss fail Open
 
 ---
 
