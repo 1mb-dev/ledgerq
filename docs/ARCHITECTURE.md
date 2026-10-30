@@ -414,7 +414,7 @@ LedgerQ provides safe concurrent access with these guarantees:
 **AutoSync = true**:
 - fsync after every write
 - Guaranteed durability
-- **Tradeoff**: Slower (~50x), guaranteed persistence
+- **Tradeoff**: Thousands of times slower, guaranteed persistence
 
 **Batch Operations**:
 - Single fsync for entire batch
@@ -424,25 +424,22 @@ LedgerQ provides safe concurrent access with these guarantees:
 
 ### Enqueue Performance
 
+Measured through the public API with 200-byte payloads (Go 1.27, macOS, Intel i5-8257U). Dequeue with 5,000 queued. Dequeue syncs before it reads.
+
 | Operation | Throughput | Latency | Notes |
 |-----------|------------|---------|-------|
-| Single (no sync) | ~3M ops/sec | 300-400 ns | Buffered writes |
-| Single (AutoSync) | ~50 ops/sec | ~19 ms | Includes fsync |
-| Batch 100 (no sync) | ~50M msgs/sec | 200 ns/msg | Amortized |
-| Batch 100 (AutoSync) | ~5K msgs/sec | 200 μs/msg | Single fsync |
+| Single (no sync) | ~230K ops/sec | ~4 μs | Buffered writes |
+| Single (AutoSync) | ~27 ops/sec | ~37 ms | Includes fsync |
+| Batch 100 (no sync) | ~2M msgs/sec | ~500 ns/msg | Amortized |
+| Batch 100 (AutoSync) | ~2.6K msgs/sec | ~385 μs/msg | Single fsync |
 
 ### Dequeue Performance
 
 | Operation | Throughput | Latency | Notes |
 |-----------|------------|---------|-------|
-| Single | ~1.4K ops/sec | ~700 μs | Includes disk read |
-| Batch 10 | ~14K msgs/sec | ~700 ns/msg | Amortized I/O |
+| Single | ~80 ops/sec | ~12 ms | Syncs, then reads from disk |
 
 ### Scalability
-
-**Concurrent Writers** (8 goroutines):
-- Enqueue: ~350 ns/op
-- Batch: ~2.2 μs/op
 
 **Bottlenecks**:
 - Single read position (dequeue serialization)
@@ -454,26 +451,29 @@ LedgerQ provides safe concurrent access with these guarantees:
 ### Crash Recovery
 
 **On Open**:
-1. Read metadata.json for last known state
-2. Scan all segment files to rebuild state
-3. Validate segment sequence (detect corruption)
-4. Resume from persisted read position
+1. Take the directory lock; a second process is refused
+2. Validate segment sequence
+3. Repair the newest segment holding entries: cut an incomplete final entry, remove segments shorter than a header
+4. Read metadata, then set the next message ID from the segments, which are the truth
+5. Resume from the persisted read position
+
+After a crash, the IDs of messages that never reached disk are reissued. This is safe because Dequeue syncs before it reads, so a lost message was never delivered. `Message.ID` is unique among delivered messages.
 
 **Corruption Handling**:
 - CRC32 checksums detect corrupted entries
-- Skip corrupted entries during recovery
-- Log warnings for investigation
+- A complete entry that fails its checksum fails Open; nothing is skipped
+- A corrupt length cannot be told from a torn entry, so the segment is cut there and Open logs a warning with the bytes dropped
 
 ### Data Loss Scenarios
 
 **AutoSync = false**:
-- Data in OS buffer cache may be lost on crash
-- Metadata may be slightly behind actual state
-- Worst case: lose messages since last sync interval
+- Entries wait in a write buffer inside the process, so even a process crash loses them
+- Metadata can be ahead of the segments; Open corrects it
+- Worst case: lose acknowledged messages since the last sync interval
 
 **AutoSync = true**:
-- No data loss on crash (fsync guarantees)
-- Metadata always consistent with segments
+- Every acknowledged message is on disk (fsync guarantees)
+- Storage that does not honour fsync can still lose data
 
 ## Code Organization
 

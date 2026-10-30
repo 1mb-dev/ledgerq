@@ -12,6 +12,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Requires Go 1.26 or later (was 1.23; 1.23 to 1.25 are end of life). Release binaries build on the current Go 1.27 patch.
+- A queue directory is locked to one process. A second Open, including `ledgerq stats` on a running queue, is refused
+- After a crash, the IDs of messages that never reached disk are reissued. `Message.ID` is unique among delivered messages only
+
+### Fixed
+
+- Open recovers from a crash: it cuts an incomplete final entry and removes a segment whose header never reached disk, and logs what it dropped
+- Dequeue no longer sticks on `message ID N not found` after a crash
+- README and docs: durability claims corrected. Without `AutoSync`, a crash can lose acknowledged messages
+- Published benchmarks replaced with measured figures. The old ones overstated buffered writes, batches and Dequeue by more than ten times
+
+### Known limits
+
+- A queue that kept enqueuing after the old second Open still stops at the gap; `SeekToMessageID` to the first surviving ID moves past it
+- A corrupt entry length reads as a torn entry, so the segment is cut there. Open logs the bytes dropped
 
 ---
 
